@@ -11,7 +11,7 @@ import java.util.stream.StreamSupport;
 
 
 interface Ovladani extends Iterable<Obec> {
-    void novy(String nazev, int psc, int pocetZen, int pocetMuzu, enumPozice pozice);
+    void novy(String nazev, int psc, int pocetZen, int pocetMuzu, enumPozice pozice, enumKraj kraj);
     
     void nastavKomparator(Comparator<? super Obec> comparator);
 
@@ -34,6 +34,7 @@ interface Ovladani extends Iterable<Obec> {
     void vypis(Consumer<Obec> writer);
 
     void nactiText(String nazev);
+    void ulozText(String nazev);
 
     void zrus();
     

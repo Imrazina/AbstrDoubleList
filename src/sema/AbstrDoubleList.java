@@ -1,4 +1,3 @@
-
 package sema;
 
 import java.util.Iterator;
@@ -10,17 +9,18 @@ public class AbstrDoubleList<T> implements IAbstrDoubleList<T> {
     private Prvek aktualni;
     private Prvek posledni;
     
-     public AbstrDoubleList() {
+    public AbstrDoubleList() {
         this.size = 0;
         this.prvni = null;
         this.aktualni = null;
         this.posledni = null;
     }
     
-    private class Prvek<T>{
+    private class Prvek<T> {
         public T data;
         public Prvek<T> next;
         public Prvek<T> prev;
+        
         public Prvek(T data, Prvek<T> next, Prvek<T> prev) {
             this.data = data;
             this.next = next;
@@ -28,11 +28,10 @@ public class AbstrDoubleList<T> implements IAbstrDoubleList<T> {
         }
     }
 
-
     @Override
     public void zrus() {
-      size =0;
-      prvni=posledni=aktualni=null;
+        size = 0;
+        prvni = posledni = aktualni = null;
     }
 
     @Override
@@ -43,114 +42,111 @@ public class AbstrDoubleList<T> implements IAbstrDoubleList<T> {
     @Override
     public void vlozPrvni(T data) {
         if (data == null) {
-        throw new NullPointerException("Cannot insert null element");
-    }
-    Prvek newPrvek = new Prvek(data, prvni, null);
-    if (prvni != null) {
-        prvni.prev = newPrvek;
-    }
-    prvni = newPrvek; 
-    if (size == 0) {
-        posledni = prvni;
-    }
-    size++;
+            throw new NullPointerException("Cannot insert null element");
+        }
+        Prvek newPrvek = new Prvek(data, prvni, posledni);
+        if (jePrazdny()) {
+            prvni = posledni = newPrvek;
+            prvni.next = prvni.prev = newPrvek;
+        } else {
+            prvni.prev = newPrvek;
+            posledni.next = newPrvek;
+            prvni = newPrvek;
+        }
+        size++;
     }
 
     @Override
     public void vlozPosledni(T data) throws KolekceException {
-        if(data == null){
+        if (data == null) {
             throw new NullPointerException("Cannot insert null element");
         }
-         if(jePrazdny()){
-            vlozPrvni(data);         
+        if (jePrazdny()) {
+            vlozPrvni(data);
         } else {
-            Prvek newPrvek = new Prvek(data, null, posledni);
+            Prvek newPrvek = new Prvek(data, prvni, posledni);
             posledni.next = newPrvek;
+            prvni.prev = newPrvek;
             posledni = newPrvek;
             size++;
-         }
+        }
     }
 
     @Override
     public void vlozNaslednika(T data) throws KolekceException {
-        if(data==null) {
+        if (data == null) {
             throw new NullPointerException("Cannot insert null element");
         }
-        if(jePrazdny()){
+        if (jePrazdny()) {
             vlozPrvni(data);
         } else {
-            Prvek newPrvek = new Prvek (data, aktualni.next, aktualni);
-            if(aktualni.next!=null){
-                aktualni.next.prev = newPrvek;
-            }
-            if(aktualni==posledni){
-                posledni=newPrvek;
-            }
+            Prvek newPrvek = new Prvek(data, aktualni.next, aktualni);
+            aktualni.next.prev = newPrvek;
             aktualni.next = newPrvek;
+            if (aktualni == posledni) {
+                posledni = newPrvek;
+            }
             size++;
         }
- 
     }
 
     @Override
     public void vlozPredchudce(T data) throws KolekceException {
-        if(data==null) {
+        if (data == null) {
             throw new NullPointerException("Cannot insert null element");
         }
-        if(jePrazdny()){
+        if (jePrazdny()) {
             vlozPrvni(data);
         } else {
-            Prvek newPrvek = new Prvek (data, aktualni, aktualni.prev);
-            if(aktualni.prev!=null){
-                aktualni.next.prev = newPrvek;
-            } else{
+            Prvek newPrvek = new Prvek(data, aktualni, aktualni.prev);
+            aktualni.prev.next = newPrvek;
+            aktualni.prev = newPrvek;
+            if (aktualni == prvni) {
                 prvni = newPrvek;
             }
-            aktualni.prev = newPrvek;
             size++;
         }
     }
 
     @Override
-    public T zpristupniAktualni() throws KolekceException{
-        if(aktualni == null){
+    public T zpristupniAktualni() throws KolekceException {
+        if (aktualni == null) {
             throw new KolekceException("No current elements to access");
         }
         return (T) aktualni.data;
     }
 
     @Override
-    public T zpristupniPrvni() throws KolekceException{
-        if(prvni == null) {
-             throw new KolekceException("No current elements to access");
+    public T zpristupniPrvni() throws KolekceException {
+        if (prvni == null) {
+            throw new KolekceException("No elements to access");
         }
-        
         aktualni = prvni;
         return (T) prvni.data;
     }
 
     @Override
-    public T zpristupniPosledni() throws KolekceException{
-        if(posledni == null){
-            throw new KolekceException("No current elements to access");
+    public T zpristupniPosledni() throws KolekceException {
+        if (posledni == null) {
+            throw new KolekceException("No elements to access");
         }
         aktualni = posledni;
         return (T) posledni.data;
     }
 
     @Override
-    public T zpristupniNaslednika() throws KolekceException{
-        if(aktualni == null || aktualni.next == null){
-            throw new KolekceException("No current elements to access");
+    public T zpristupniNaslednika() throws KolekceException {
+        if (aktualni == null || aktualni.next == null) {
+            throw new KolekceException("No successors to access");
         }
         aktualni = aktualni.next;
         return (T) aktualni.data;
     }
 
     @Override
-    public T zpristupniPredchudce() throws KolekceException{
-        if(aktualni == null || aktualni.prev == null){
-            throw new KolekceException("No current elements to access");
+    public T zpristupniPredchudce() throws KolekceException {
+        if (aktualni == null || aktualni.prev == null) {
+            throw new KolekceException("No predecessors to access");
         }
         aktualni = aktualni.prev;
         return (T) aktualni.data;
@@ -158,154 +154,135 @@ public class AbstrDoubleList<T> implements IAbstrDoubleList<T> {
 
     @Override
     public T odeberAktualni() throws KolekceException {
-        if (jePrazdny()){
+        if (jePrazdny()) {
             throw new KolekceException("List is empty cannot remove the element");
         }
-        if(aktualni == prvni){
+        if (aktualni == prvni) {
             return odeberPrvni();
         }
-        if(aktualni == posledni){
+        if (aktualni == posledni) {
             return odeberPosledni();
         }
-        
+
         T data = (T) aktualni.data;
-        
-        aktualni.next.prev = aktualni.next;
-        if(aktualni.next !=null){
-            aktualni.next.prev = aktualni.prev;
-        }
-        
+
+        aktualni.prev.next = aktualni.next;
+        aktualni.next.prev = aktualni.prev;
+
         aktualni = null;
-        
         size--;
-        
+
         return data;
     }
 
     @Override
     public T odeberPrvni() throws KolekceException {
-        if (jePrazdny()){
+        if (jePrazdny()) {
             throw new KolekceException("List is empty cannot remove the element");
         }
-        
+
         T data = (T) prvni.data;
-        
-        prvni = prvni.next;
-        
-        if(prvni==null){
-            posledni = null;
+        if (prvni == posledni) { 
+            zrus();
         } else {
-        prvni.prev = null;
+            prvni = prvni.next;
+            prvni.prev = posledni;
+            posledni.next = prvni;
+            size--;
         }
-        
-        size--;
-        
+
         return data;
     }
 
     @Override
     public T odeberPosledni() throws KolekceException {
-        if (jePrazdny()){
+        if (jePrazdny()) {
             throw new KolekceException("List is empty cannot remove the element");
         }
-        
+
         T data = (T) posledni.data;
-        
-        posledni = posledni.prev;
-        
-        if(posledni == null){
-            prvni=null;
+        if (prvni == posledni) {
+            zrus();
         } else {
-            posledni.next = null;
+            posledni = posledni.prev;
+            posledni.next = prvni;
+            prvni.prev = posledni;
+            size--;
         }
-        
-        size--;
-        
+
         return data;
     }
 
     @Override
     public T odeberNaslednika() throws KolekceException {
-        if (jePrazdny()){
+        if (jePrazdny()) {
             throw new KolekceException("List is empty cannot remove the element");
         }
-         
-         if(aktualni.next == null){
-             throw new KolekceException("No successors to remove");
-         }
-        
-        if(aktualni.next == posledni){
+        if (aktualni.next == prvni) {
+            throw new KolekceException("No successors to remove");
+        }
+        if (aktualni.next == posledni) {
             return odeberPosledni();
         }
-        
+
         T data = (T) aktualni.next.data;
-        
         aktualni.next = aktualni.next.next;
-        
-        if(aktualni.next !=null){
-            aktualni.next.prev = aktualni;
-        }
-        
+        aktualni.next.prev = aktualni;
         size--;
-        
+
         return data;
     }
 
     @Override
     public T odeberPredchudce() throws KolekceException {
-        if (jePrazdny()){
+        if (jePrazdny()) {
             throw new KolekceException("List is empty cannot remove the element");
         }
-        
-        if(aktualni.prev == null){
-             throw new KolekceException("No predecessors to remove");
+        if (aktualni.prev == posledni) {
+            throw new KolekceException("No predecessors to remove");
         }
-        
-        if(aktualni.prev == prvni){
+        if (aktualni.prev == prvni) {
             return odeberPrvni();
         }
-        
+
         T data = (T) aktualni.prev.data;
-        
         aktualni.prev = aktualni.prev.prev;
-        
-        if (aktualni.prev !=null){
-            aktualni.prev.next = aktualni;
-        }
+        aktualni.prev.next = aktualni;
         size--;
+
         return data;
     }
-    
+
     @Override
-     public int size() {
+    public int size() {
         return size;
     }
 
     @Override
     public Iterator<T> iterator() {
         return new Iterator<T>() {
-        Prvek<T> aktualniIterator = null;
+            Prvek<T> aktualniIterator = null;
 
-        @Override
-        public boolean hasNext() {
-            if (aktualniIterator == null) {
-                return prvni != null;
-            }
-            return aktualniIterator.next != null;
-        }
-
-        @Override
-        public T next() {
-            if (hasNext()) {
+            @Override
+            public boolean hasNext() {
                 if (aktualniIterator == null) {
-                    aktualniIterator = prvni;
-                } else {
-                    aktualniIterator = aktualniIterator.next;
+                    return prvni != null;
                 }
-                return aktualniIterator.data;
+                return aktualniIterator.next != prvni;
             }
-            throw new NoSuchElementException();
-        }
-    };
-}
+
+            @Override
+            public T next() {
+                if (hasNext()) {
+                    if (aktualniIterator == null) {
+                        aktualniIterator = prvni;
+                    } else {
+                        aktualniIterator = aktualniIterator.next;
+                    }
+                    return aktualniIterator.data;
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
 }

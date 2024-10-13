@@ -6,27 +6,24 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import sema.AbstrDoubleList;
 import sema.IAbstrDoubleList;
 import sema.KolekceException;
 import spravce.SpravaObec;
 
 public class Obyvatele implements IObyvatele {
+
     private static final AbstrDoubleList<Obec> instance = SpravaObec.getInstance();
-   
 
     public IAbstrDoubleList<Obec>[] kraje;
 
     public Obyvatele() {
         kraje = new IAbstrDoubleList[enumKraj.values().length];
         for (int i = 0; i < kraje.length; i++) {
-            kraje[i] = new AbstrDoubleList<>(); 
+            kraje[i] = new AbstrDoubleList<>();
         }
     }
-    
-//    @Override
+
     public int importData(String soubor) throws KolekceException {
         int count = 0;
         try (BufferedReader br = new BufferedReader(new FileReader(soubor))) {
@@ -40,15 +37,14 @@ public class Obyvatele implements IObyvatele {
                 int pocetMuzu = Integer.parseInt(data[4]);
                 int pocetZen = Integer.parseInt(data[5]);
                 int celkem = Integer.parseInt(data[6]);
-
+                enumPozice pozice = data.length >= 8 ? enumPozice.valueOf(data[7].toUpperCase()) : enumPozice.POSLEDNI;
                 enumKraj kraj = enumKraj.values()[ciscoKraji - 1];
-                Obec obec = new Obec(nazev, psc, pocetMuzu, pocetZen);
-                System.out.println("Импортирование общины: " + obec);
+                Obec obec = new Obec(nazev, psc, pocetMuzu, pocetZen, kraj, pozice);
+                System.out.println("Imported datas: " + obec);
 
                 vlozObec(obec, enumPozice.POSLEDNI, kraj);
-                instance.vlozPosledni(obec);
                 count++;
-                
+
             }
         } catch (IOException e) {
             System.err.println("Error reading file: " + e.getMessage());
@@ -56,31 +52,29 @@ public class Obyvatele implements IObyvatele {
         } catch (NumberFormatException e) {
             System.err.println("Error parsing number: " + e.getMessage());
             e.printStackTrace();
-        } 
-      System.out.println("Импортировано объектов: " + count);
-    return count;
+        }
+        System.out.println("Size of imported datas: " + count);
+        return count;
     }
 
     @Override
     public void vlozObec(Obec obec, enumPozice pozice, enumKraj kraj) {
-        IAbstrDoubleList<Obec> seznamObci = kraje[kraj.ordinal()];
-
         try {
             switch (pozice) {
                 case PRVNI:
-                    seznamObci.vlozPrvni(obec);
+                    instance.vlozPrvni(obec);
                     break;
 
                 case POSLEDNI:
-                    seznamObci.vlozPosledni(obec);
+                    instance.vlozPosledni(obec);
                     break;
 
                 case NASLEDNIK:
-                    seznamObci.vlozNaslednika(obec);
+                    instance.vlozNaslednika(obec);
                     break;
 
                 case PREDCHUDCE:
-                    seznamObci.vlozPredchudce(obec);
+                    instance.vlozPredchudce(obec);
                     break;
 
                 default:
@@ -90,37 +84,35 @@ public class Obyvatele implements IObyvatele {
             System.err.println("Error adding community: " + e.getMessage());
             e.printStackTrace();
         }
-        System.out.println("Добавление объекта: " + obec + " в позицию: " + pozice + " для края: " + kraj);
+        System.out.println("Add: " + obec + "in position: " + pozice + "for region: " + kraj);
     }
 
     @Override
     public Obec zpristupniObec(enumPozice pozice, enumKraj kraj) {
-        IAbstrDoubleList<Obec> seznamObci = kraje[kraj.ordinal()];
-        
-        if (seznamObci.jePrazdny()) {
-        System.err.println("The list is empty, there are no elements to access.");
-        return null;
-    }
 
-    Obec obec = null;
+        if (instance.jePrazdny()) {
+            System.err.println("The list is empty, there are no elements to access.");
+            return null;
+        }
 
+        Obec obec = null;
 
         try {
             switch (pozice) {
                 case PRVNI:
-                    obec = seznamObci.zpristupniPrvni();
+                    obec = instance.zpristupniPrvni();
                     break;
                 case POSLEDNI:
-                    obec = seznamObci.zpristupniPosledni();
+                    obec = instance.zpristupniPosledni();
                     break;
                 case NASLEDNIK:
-                    obec = seznamObci.zpristupniNaslednika();
+                    obec = instance.zpristupniNaslednika();
                     break;
                 case PREDCHUDCE:
-                    obec = seznamObci.zpristupniPredchudce();
+                    obec = instance.zpristupniPredchudce();
                     break;
                 case AKTUALNI:
-                    obec = seznamObci.zpristupniAktualni();
+                    obec = instance.zpristupniAktualni();
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown position: " + pozice);
@@ -134,35 +126,61 @@ public class Obyvatele implements IObyvatele {
 
     @Override
     public Obec odeberObec(enumPozice pozice, enumKraj kraj) {
-        
-        System.out.println("Количество объектов в списке: " + instance.size());
+
+        System.out.println("Size: " + instance.size());
         if (instance.jePrazdny()) {
-        System.err.println("The list is empty and the item cannot be deleted.");
-        return null;
-    }
+            System.err.println("The list is empty and the item cannot be deleted.");
+            return null;
+        }
+        
+            List<Obec> filteredObce = new ArrayList<>();
+            for (Obec obec : instance) {
+                if (obec.getKraj() == kraj) {
+                    filteredObce.add(obec);
+                }
+            }
+
+            if (filteredObce.isEmpty()) {
+                System.err.println("No items found for the selected region.");
+                return null;
+            }
+        
         Obec odebranaObec = null;
 
         try {
             switch (pozice) {
                 case PRVNI:
-                    odebranaObec = instance.odeberPrvni();
-                    break;
+                odebranaObec = filteredObce.get(0);
+                instance.odeberPrvni(); 
+                break;
 
-                case POSLEDNI:
-                    odebranaObec = instance.odeberPosledni();
-                    break;
+            case POSLEDNI:
+                odebranaObec = filteredObce.get(filteredObce.size() - 1);
+                instance.odeberPosledni(); 
+                break;
 
-                case NASLEDNIK:
-                    odebranaObec = instance.odeberNaslednika();
-                    break;
+            case NASLEDNIK:
+                if (filteredObce.size() > 1) {
+                    odebranaObec = filteredObce.get(1); 
+                    instance.odeberNaslednika(); 
+                } else {
+                    System.err.println("There is no next item to delete.");
+                }
+                break;
 
-                case PREDCHUDCE:
-                    odebranaObec = instance.odeberPredchudce();
-                    break;
+            case PREDCHUDCE:
+                if (filteredObce.size() > 1) {
+                    odebranaObec = filteredObce.get(filteredObce.size() - 2); 
+                    instance.odeberPredchudce(); 
+                } else {
+                    System.err.println("There is no previous item to delete.");
+                }
+                break;
 
-                case AKTUALNI:
-                    odebranaObec = instance.odeberAktualni();
-                    break;
+            case AKTUALNI:
+                odebranaObec = filteredObce.get(0); 
+                instance.odeberAktualni(); 
+                break;
 
                 default:
                     throw new IllegalArgumentException("Unknown position: " + pozice);
@@ -171,20 +189,15 @@ public class Obyvatele implements IObyvatele {
             System.err.println("Error deleting community: " + e.getMessage());
             e.printStackTrace();
         }
-        
-     
-
         return odebranaObec;
     }
 
     @Override
     public float zjistiPrumer(enumKraj kraj) {
-
-
-        System.out.println("Список общин для " + kraj + ": " + instance);
+        System.out.println("Regions: " + kraj + ": " + instance);
 
         if (instance.jePrazdny()) {
-            System.out.println("Список общин для " + kraj + " пуст.");
+            System.out.println("Regions: " + kraj + " empty");
             return 0;
         }
 
@@ -194,71 +207,117 @@ public class Obyvatele implements IObyvatele {
         Iterator<Obec> iterator = instance.iterator();
         while (iterator.hasNext()) {
             Obec obec = iterator.next();
-            System.out.println("Обрабатывается община: " + obec);  
-            celkovyPocetObyvatel += obec.getCelkem();
+
+            if (kraj == null || obec.getKraj().equals(kraj)) {
+                System.out.println("Processing the community: " + obec);
+                celkovyPocetObyvatel += obec.getCelkem();
+                pocetObci++;
+            }
+        }
+
+        if (pocetObci == 0) {
+            System.out.println("List is empty for this region");
+            return 0;
+        }
+
+        System.out.println("Communitys: " + pocetObci + ", Total population: " + celkovyPocetObyvatel);
+        return (float) celkovyPocetObyvatel / pocetObci;
+
+    }
+
+    @Override
+    public Obec[] zobrazObce(enumKraj kraj) {
+
+        if (instance.jePrazdny()) {
+            System.out.println("List is empty for: " + kraj);
+            return new Obec[0];
+        }
+
+        List<Obec> obeclist = new ArrayList<>();
+        Iterator<Obec> iterator = instance.iterator();
+        while (iterator.hasNext()) {
+            Obec obec = iterator.next();
+
+            if (obec.getKraj() == kraj) {
+                System.out.println(obec);
+                obeclist.add(obec);
+            }
+        }
+        return obeclist.toArray(new Obec[0]);
+    }
+
+    @Override
+    public Obec[] zobrazObceNadPrumer(enumKraj kraj) {
+        if (instance.jePrazdny()) {
+            System.out.println("List is empty for: " + kraj);
+            return new Obec[0];
+        }
+
+        float prumer;
+        if (kraj == null) {
+            prumer = zjistiPrumerVsechnyKraje();
+        } else {
+            prumer = zjistiPrumer(kraj);
+        }
+
+        List<Obec> obceNadPrumer = new ArrayList<>();
+
+        for (Obec obec : instance) {
+            if ((kraj == null || obec.getKraj() == kraj) && obec.getCelkem() > prumer) {
+                obceNadPrumer.add(obec);
+                System.out.println(obec);
+            }
+        }
+
+        return obceNadPrumer.toArray(new Obec[0]);
+    }
+
+    private float zjistiPrumerVsechnyKraje() {
+        int celkemObce = 0;
+        int pocetObci = 0;
+
+        for (Obec obec : instance) {
+            celkemObce += obec.getCelkem();
             pocetObci++;
         }
 
         if (pocetObci == 0) {
             return 0;
         }
-        System.out.println("Обработано общин: " + pocetObci + ", Общее население: " + celkovyPocetObyvatel);
-        return (float) celkovyPocetObyvatel / pocetObci;
 
-    }
-
-
-      @Override
-      public void zobrazObce(enumKraj kraj) {
- IAbstrDoubleList<Obec> seznamObci = kraje[kraj.ordinal()]; // Получаем список общин для выбранного края
-
-    if (seznamObci.jePrazdny()) {
-        System.out.println("Нет общин для края: " + kraj);
-        return;
-    }
-
-    System.out.println("Общины для края: " + kraj);
-    
-    Iterator<Obec> iterator = seznamObci.iterator();
-    while (iterator.hasNext()) {
-        Obec obec = iterator.next();
-        System.out.println(obec);  
-    }
-      }
-    
-     
-    @Override
-    public void zobrazObceNadPrumer(enumKraj kraj) {
-         float prumer = zjistiPrumer(kraj);
-
-    if (kraj == null) { 
-        for (IAbstrDoubleList<Obec> seznam : kraje) {
-            for (Obec obec : seznam) {
-                if (obec.getCelkem() > prumer) {
-                    System.out.println(obec);
-                }
-            }
-        }
-    } else { 
-        IAbstrDoubleList<Obec> seznamObci = kraje[kraj.ordinal()];
-        for (Obec obec : seznamObci) {
-            if (obec.getCelkem() > prumer) {
-                System.out.println(obec);
-            }
-        }
-    }
+        return (float) celkemObce / pocetObci;
     }
 
     @Override
     public void zrus(enumKraj kraj) {
-        IAbstrDoubleList<Obec> seznamObci = kraje[kraj.ordinal()];
-
-        try {
-            seznamObci.zrus();
-        } catch (Exception e) {
-            System.err.println("Error clearing communities: " + e.getMessage());
-            e.printStackTrace();
+        if (instance.jePrazdny()) {
+            System.out.println("List is empty for: " + kraj);
         }
-    }
+        
+         try {
+        List<Obec> newObceList = new ArrayList<>();
+        int count = 0;
+        
+        for (Obec obec : instance) {
+            if (kraj == null || obec.getKraj() == kraj) {
+                count++;
+            } else {
+                newObceList.add(obec);  
+            }
+        }
+
+        instance.zrus();  
+        for (Obec obec : newObceList) {
+    instance.vlozPosledni(obec);  
+} 
+        
+
+
+        System.out.println("Deleted communitys for region: " + kraj + ": " + count);
+        
+    } catch (Exception e) {
+        System.err.println("Error because of deleting: " + e.getMessage());
+        e.printStackTrace();
+    }}
 
 }

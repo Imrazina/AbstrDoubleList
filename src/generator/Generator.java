@@ -5,6 +5,7 @@ import java.util.Random;
 import data.Obec;
 import data.Obyvatele;
 import data.enumKraj;
+import data.enumPozice;
 import static data.enumPozice.POSLEDNI;
 import sema.AbstrDoubleList;
 import sema.KolekceException;
@@ -30,14 +31,14 @@ public class Generator {
 
         for (int i = 0; i < pocet; i++) {
             String nazev = generateNazev();
-            int psc = random.nextInt(1000); 
+            int psc = 1000 + random.nextInt(9000); 
             int pocetMuzu = random.nextInt(1000); 
-            int pocetZen = random.nextInt(1000);  
+            int pocetZen = random.nextInt(1000); 
             
             enumKraj kraj = enumKraj.values()[random.nextInt(enumKraj.values().length)];
+            enumPozice pozice = (i == 0) ? enumPozice.PRVNI : enumPozice.POSLEDNI;
             
-            Obec novyObec = new Obec(nazev, psc, pocetMuzu, pocetZen);
-            obyvatelstvo.vlozObec(novyObec, POSLEDNI, kraj);
-            instance.vlozPosledni(novyObec);          
-}
+            Obec novyObec = new Obec(nazev, psc, pocetMuzu, pocetZen, kraj, pozice);
+            obyvatelstvo.vlozObec(novyObec, pozice, kraj);      
+        }
     }}

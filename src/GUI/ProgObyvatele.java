@@ -5,16 +5,13 @@ import data.Obyvatele;
 import data.enumKraj;
 import data.enumPozice;
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
@@ -26,9 +23,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javax.swing.JOptionPane;
-import sema.AbstrDoubleList;
-import sema.IAbstrDoubleList;
 import sema.KolekceException;
 import spravce.SpravaObec;
 
@@ -39,6 +33,7 @@ public class ProgObyvatele extends Application {
     private final BorderPane bp = new BorderPane();
     private ListView<Obec> ObecView;
     private ComboBox<enumKraj> cbFiltr;
+    private ComboBox<enumPozice> cbPozice;
     private VBox verticalPanel;
     private HBox horizontalPanel;
     private final SpravaObec spravce = new SpravaObec();
@@ -54,7 +49,7 @@ public class ProgObyvatele extends Application {
         setUpBottomPanel();
         closeApp(stage);
 
-        Scene scene = new Scene(bp, 830, 600);
+        Scene scene = new Scene(bp, 1200, 800);
         stage.setScene(scene);
         stage.show();
     }
@@ -83,22 +78,23 @@ public class ProgObyvatele extends Application {
         horizontalPanel.setAlignment(Pos.CENTER);
         horizontalPanel.setSpacing(15);
         horizontalPanel.setMinWidth(115);
-        horizontalPanel.setPadding(new Insets(15, 115, 15, 15));
+        horizontalPanel.setPadding(new Insets(15, 215, 15, 15));
 
         Button generujBtn = new Button("Generuj");
         generujBtn.setOnAction(e -> {
             generuj();
         });
 
-//        Button ulozBtn = new Button("Uloz");
-//        ulozBtn.setOnAction(e -> {
-//            spravce.ulozText("kraje.csv");
-//        });
+        Button ulozBtn = new Button("Uloz");
+        ulozBtn.setOnAction(e -> {
+            spravce.ulozText("kraje.csv");
+        });
+
         Button nactiBtn = new Button("Nacti");
         nactiBtn.setOnAction(e -> {
             ObecView.getItems().clear();
-            spravce.nactiText("/Users/shabossova/NetBeansProjects/semA/src/command/kraje.csv");
-            System.out.println("Количество объектов после импорта: " + spravce.dejPocet());
+            spravce.nactiText("kraje.csv");
+            System.out.println("Size after importing: " + spravce.dejPocet());
             vypis();
         });
 
@@ -107,13 +103,11 @@ public class ProgObyvatele extends Application {
             DialogNovy dialog = DialogNovy.getDialogNovy();
             Obec obec = dialog.dejResult();
             if (obec != null) {
-                try {
-                    spravce.vlozPolozku(obec);
-                } catch (KolekceException ex) {
-                    error("ERROR");
-                }
                 ObecView.getItems().add(obec);
+                } else {
+                    error("Obec je null");
             }
+            
 
         });
 
@@ -122,16 +116,53 @@ public class ProgObyvatele extends Application {
             spravce.zrus();
             ObecView.getItems().clear();
         });
+        
+        Button zrusKrajBtn = new Button("Zrus Podle kraju");
+        zrusKrajBtn.setOnAction(e -> {
+            Dialog<enumKraj> dialog = new Dialog<>();
+            dialog.setTitle("Zrus podle kraju");
 
-        Button[] buttonsHor = {generujBtn, nactiBtn, novyBtn, zrusBtn};
+            ComboBox<enumKraj> krajComboBox = new ComboBox<>();
+            krajComboBox.getItems().addAll(enumKraj.values());
+            krajComboBox.setValue(enumKraj.PRAHA);
+
+            VBox dialogVBox = new VBox();
+            dialogVBox.setSpacing(10);
+            dialogVBox.getChildren().add(krajComboBox);
+
+            dialog.getDialogPane().setContent(dialogVBox);
+            dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == ButtonType.OK) {
+                    enumKraj selectedKraj = krajComboBox.getValue();
+                    if (selectedKraj != null) {
+                        obyvatelstvo.zrus(selectedKraj);
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("Vysledek: ");
+                            alert.setHeaderText(null);
+                            alert.setContentText("Schvaleno! byli odebrany obci ze kraju" + selectedKraj);
+                            alert.showAndWait();
+                        ObecView.getItems().removeIf(obec -> obec.getKraj().equals(selectedKraj));
+                    } else {
+                        error("Kraj nebyl vybran");
+                    }
+                }
+                return null;
+            });
+
+            dialog.showAndWait();
+        });
+
+        Button[] buttonsHor = {generujBtn, nactiBtn,ulozBtn, novyBtn, zrusBtn, zrusKrajBtn};
 
         for (Button button : buttonsHor) {
-            button.setMaxSize(70, 30);
-            button.setMinSize(70, 30);
+            button.setMaxSize(120, 30);
+            button.setMinSize(120, 30);
         }
 
-        horizontalPanel.getChildren().addAll(generujBtn, nactiBtn, novyBtn,
-                zrusBtn);
+        horizontalPanel.getChildren().addAll(generujBtn, nactiBtn,ulozBtn, novyBtn,
+                zrusBtn, zrusKrajBtn);
         bp.setBottom(horizontalPanel);
     }
 
@@ -181,53 +212,40 @@ public class ProgObyvatele extends Application {
             }
         });
 
-        Button zobrazObceBtn = new Button("Zobraz");
+        Button zobrazObceBtn = new Button("Zobraz podle kraju");
         zobrazObceBtn.setOnAction(e -> {
             Dialog<enumKraj> dialog = new Dialog<>();
-            dialog.setTitle("Выбор края");
+            dialog.setTitle("Vyberte kraj");
 
-            ComboBox<enumKraj> krajComboBox = new ComboBox<>();
-            krajComboBox.getItems().addAll(enumKraj.values());
+            ComboBox<enumKraj> cbFiltr = new ComboBox<>();
+            cbFiltr.getItems().addAll(enumKraj.values());
+            cbFiltr.setValue(enumKraj.PRAHA);
 
             VBox dialogVBox = new VBox();
             dialogVBox.setSpacing(10);
-            dialogVBox.getChildren().addAll(new Label("Выберите край:"), krajComboBox);
+            dialogVBox.getChildren().addAll(new Label("Vyberte kraj:"), cbFiltr);
 
             dialog.getDialogPane().setContent(dialogVBox);
             dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
             dialog.setResultConverter(dialogButton -> {
                 if (dialogButton == ButtonType.OK) {
-                    return krajComboBox.getValue();
+                    return cbFiltr.getValue();
                 }
                 return null;
             });
 
             dialog.showAndWait().ifPresent(selectedKraj -> {
-                ObecView.getItems().clear();  // Очищаем список перед обновлением
-
-               if (selectedKraj != null) {
-    obyvatelstvo.zobrazObce(selectedKraj);
-
-    // Очищаем ListView перед обновлением
-    ObecView.getItems().clear();
-
-    // Добавляем только те общины, которые относятся к выбранному краю
-    AbstrDoubleList<Obec> instance = (AbstrDoubleList<Obec>) obyvatelstvo.getObceByKraj(selectedKraj);
-
-    Iterator<Obec> iterator = instance.iterator();
-    while (iterator.hasNext()) {
-        Obec obec = iterator.next();
-        ObecView.getItems().add(obec);  // Добавляем объект в ListView
-    
-    }
-
-} else {
-                    Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Внимание");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Край не был выбран!");
-                    alert.showAndWait();
+                ObecView.getItems().clear();
+                if (selectedKraj != null) {
+            Obec[] obceArray = obyvatelstvo.zobrazObce(selectedKraj); 
+            
+            for (Obec obec : obceArray) {
+                ObecView.getItems().add(obec);  
+            }
+            
+          } else {
+                    error("ERROR");
                 }
             });
         });
@@ -253,7 +271,12 @@ public class ProgObyvatele extends Application {
                     if (selectedKraj != null) {
                         float prumer = 0;
                         prumer = obyvatelstvo.zjistiPrumer(selectedKraj);
-                        System.out.println("Průměr pro kraj " + selectedKraj + ": " + prumer);
+                          System.out.println("Průměr pro kraj " + selectedKraj + ": " + prumer);
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("Vysledek: ");
+                            alert.setHeaderText(null);
+                            alert.setContentText("Prumer pro kraj: " + prumer);
+                            alert.showAndWait();
                     } else {
                         System.out.println("Kraj nebyl vybrán!");
                     }
@@ -290,31 +313,102 @@ public class ProgObyvatele extends Application {
                         Obec odebranaObec = obyvatelstvo.odeberObec(selectedPozice, selectedKraj);
                         if (odebranaObec != null) {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                            alert.setTitle("Результат удаления");
+                            alert.setTitle("Vysledek: ");
                             alert.setHeaderText(null);
-                            alert.setContentText("Удалена община: " + odebranaObec);
+                            alert.setContentText("Obec odstranen: " + odebranaObec);
                             alert.showAndWait();
 
                             ObecView.getItems().remove(odebranaObec);
                         } else {
-                            Alert alert = new Alert(Alert.AlertType.WARNING);
-                            alert.setTitle("Результат удаления");
-                            alert.setHeaderText(null);
-                            alert.setContentText("Нет общин для удаления.");
-                            alert.showAndWait();
+                            error("Nejsou žádné obcy ke smazání.");
                         }
                     } else {
-                        Alert alert = new Alert(Alert.AlertType.ERROR);
-                        alert.setTitle("Ошибка");
-                        alert.setHeaderText(null);
-                        alert.setContentText("Позиция или край не были выбраны!");
-                        alert.showAndWait();
+                        error("Pozice nebo kraj nejsou vybrany");
                     }
                 }
                 return null;
             });
 
             dialog.showAndWait();
+        });
+        
+        Button zpristupniObecBtn = new Button("Zpristupni Obec");
+        zpristupniObecBtn.setOnAction(e -> {
+            Dialog<enumPozice> dialog = new Dialog<>();
+            dialog.setTitle("Odeber Obec");
+
+            ComboBox<enumPozice> poziceComboBox = new ComboBox<>();
+            poziceComboBox.getItems().addAll(enumPozice.values());
+
+            ComboBox<enumKraj> krajComboBox = new ComboBox<>();
+            krajComboBox.getItems().addAll(enumKraj.values());
+
+            VBox dialogVBox = new VBox();
+            dialogVBox.setSpacing(10);
+            dialogVBox.getChildren().addAll(new Label("Vyberte pozici:"), poziceComboBox, new Label("Vyberte kraj:"), krajComboBox);
+
+            dialog.getDialogPane().setContent(dialogVBox);
+            dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == ButtonType.OK) {
+                    enumPozice selectedPozice = poziceComboBox.getValue();
+                    enumKraj selectedKraj = krajComboBox.getValue();
+                    if (selectedPozice != null && selectedKraj != null) {
+                        Obec zpristupniObec = obyvatelstvo.zpristupniObec(selectedPozice, selectedKraj);
+                        if (zpristupniObec != null) {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("Vysledek: ");
+                            alert.setHeaderText(null);
+                            alert.setContentText("Zpristupni Obec: " + zpristupniObec);
+                            alert.showAndWait();
+                        } else {
+                            error("Nejsou žádné obcy.");
+                        }
+                    } else {
+                        error("Pozice nebo kraj nejsou vybrany");
+                    }
+                }
+                return null;
+            });
+
+            dialog.showAndWait();
+        });
+        
+        Button ZobrazObceNadPrumerBtn = new Button("Zobraz Obce Nad Prumer");
+        ZobrazObceNadPrumerBtn.setOnAction(e -> {
+            Dialog<enumKraj> dialog = new Dialog<>();
+            dialog.setTitle("Vyberte kraj");
+
+            ComboBox<enumKraj> cbFiltr = new ComboBox<>();
+            cbFiltr.getItems().addAll(enumKraj.values());
+            cbFiltr.setValue(enumKraj.PRAHA);
+
+            VBox dialogVBox = new VBox();
+            dialogVBox.setSpacing(10);
+            dialogVBox.getChildren().addAll(new Label("Vyberte kraj:"), cbFiltr);
+
+            dialog.getDialogPane().setContent(dialogVBox);
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == ButtonType.OK) {
+                    return cbFiltr.getValue();
+                }
+                return null;
+            });
+
+            dialog.showAndWait().ifPresent(selectedKraj -> {
+                ObecView.getItems().clear();
+                if (selectedKraj != null) {
+            Obec[] obceArray = obyvatelstvo.zobrazObceNadPrumer(selectedKraj); 
+            
+            for (Obec obec : obceArray) {
+                ObecView.getItems().add(obec);  
+            } } else {
+                    error("ERROR");
+                }
+            });
         });
 
         Button clearBtn = new Button("Clear");
@@ -328,20 +422,20 @@ public class ProgObyvatele extends Application {
                 spravce.vyjmi();
                 ObecView.getItems().remove(ObecView.getSelectionModel().getSelectedItem());
             }
-            });
-    
+        });
 
-    Button[] buttonsVert = {prvniBtn, nasledniBtn, predchoziBtn,
-                posledniBtn, vijmiBtn, zobrazBtn, zobrazObceBtn, zjistiPrumerBtn, odeberBtn, clearBtn};
-            for (Button button : buttonsVert) {
-                button.setMinSize(150, 30);
-                button.setMaxSize(150, 30);
-            }
-
-            verticalPanel.getChildren().addAll(prochLbl, prvniBtn, nasledniBtn, predchoziBtn,
-                    posledniBtn, prikazyLbl, vijmiBtn, zobrazBtn, zobrazObceBtn, zjistiPrumerBtn, odeberBtn, clearBtn);
-            bp.setRight(verticalPanel);
+        Button[] buttonsVert = {prvniBtn, nasledniBtn, predchoziBtn,
+            posledniBtn, vijmiBtn, zobrazBtn, zobrazObceBtn, zjistiPrumerBtn, odeberBtn, zpristupniObecBtn, ZobrazObceNadPrumerBtn, clearBtn};
+        for (Button button : buttonsVert) {
+            button.setMinSize(200, 30);
+            button.setMaxSize(200, 30);
         }
+
+        verticalPanel.getChildren().addAll(prochLbl, prvniBtn, nasledniBtn, predchoziBtn,
+                posledniBtn, prikazyLbl, vijmiBtn, zobrazBtn, zobrazObceBtn, zjistiPrumerBtn, odeberBtn,
+                zpristupniObecBtn, ZobrazObceNadPrumerBtn, clearBtn);
+        bp.setRight(verticalPanel);
+    }
 
     private void setUpObecView() {
         ObecView = new ListView<>();
@@ -356,10 +450,10 @@ public class ProgObyvatele extends Application {
     }
 
     private void vypis() {
-        System.out.println("Количество объектов в списке: " + spravce.dejPocet());
+        System.out.println("Size: " + spravce.dejPocet());
         spravce.vypis(obec -> {
             ObecView.getItems().add(obec);
-            System.out.println("Объект добавлен: " + obec);
+            System.out.println("Add element: " + obec);
         });
     }
 

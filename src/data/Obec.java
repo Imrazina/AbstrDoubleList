@@ -12,33 +12,18 @@ public class Obec implements Comparable<Obec>{
     private int pocetZen;
     private int pocetMuzu;
     private int celkem;
+    private enumPozice pozice;
+
+    private enumKraj kraj;
     
-    public Obec(String nazev, int psc, int pocetZen, int pocetMuzu) {
+    public Obec(String nazev, int psc, int pocetZen, int pocetMuzu, enumKraj kraj, enumPozice pozice) {
         this.nazev = nazev;
         this.psc = psc;
         this.pocetZen = pocetZen;
         this.pocetMuzu = pocetMuzu;
         this.celkem = pocetZen + pocetMuzu;
-    }
-
-    public void setNazev(String nazev) {
-        this.nazev = nazev;
-    }
-
-    public void setPsc(int psc) {
-        this.psc = psc;
-    }
-
-    public void setPocetZen(int pocetZen) {
-        this.pocetZen = pocetZen;
-    }
-
-    public void setPocetMuzu(int pocetMuzu) {
-        this.pocetMuzu = pocetMuzu;
-    }
-
-    public void setCelkem(int celkem) {
-        this.celkem = celkem;
+        this.kraj = kraj;
+        this.pozice = pozice;
     }
 
     public String getNazev() {
@@ -59,6 +44,14 @@ public class Obec implements Comparable<Obec>{
     
     public int getCelkem(){
         return celkem;
+    }
+    
+     public enumPozice getPozice() {
+        return pozice;
+    }
+
+    public enumKraj getKraj() {
+        return kraj;
     }
     
     @Override

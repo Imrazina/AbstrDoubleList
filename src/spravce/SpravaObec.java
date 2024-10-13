@@ -3,8 +3,11 @@ package spravce;
 
 import data.Obec;
 import data.Obyvatele;
+import data.enumKraj;
 import data.enumPozice;
 import generator.Generator;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Objects;
@@ -22,14 +25,15 @@ public class SpravaObec implements Ovladani {
     private Comparator<? super Obec> comparator;
     
     private static final AbstrDoubleList<Obec> instance = new AbstrDoubleList<>();
+    private static final Iterator<Obec> itr = instance.iterator();
     
     public static AbstrDoubleList<Obec> getInstance() {
         return instance;
     }
 
     @Override
-    public void novy(String nazev, int psc, int pocetZen, int pocetMuzu, enumPozice pozice) {
-           Obec obec = new Obec(nazev, psc, pocetZen, pocetMuzu);  
+    public void novy(String nazev, int psc, int pocetZen, int pocetMuzu, enumPozice pozice, enumKraj kraj) {
+           Obec obec = new Obec(nazev, psc, pocetZen, pocetMuzu, kraj, pozice);  
 
     try {
         switch (pozice) {
@@ -172,23 +176,32 @@ public class SpravaObec implements Ovladani {
         count++;
         writer.accept(obec);
     }
-      System.out.println("Количество объектов Obec: " + count);
+      System.out.println("Size: " + count);
     }
 
     @Override
     public void nactiText(String nazev) {
         try {
             int importedCount = obyvatelstvo.importData(nazev);
-            System.out.println("Количество импортированных записей: " + importedCount);
+            System.out.println("Size: " + importedCount);
         } catch (KolekceException ex) {
             Logger.getLogger(SpravaObec.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-//    @Override
-//    public void ulozText(String nazev) {
-//        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-//    }
+    @Override
+    public void ulozText(String nazev) {
+          try {
+            FileWriter writer = new FileWriter(nazev);
+            while (itr.hasNext()) {
+                writer.write(itr.next().toString() + "\n");
+            }
+            writer.close();
+            System.out.println("Successfully wrote to the file.");
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+        }
+    }
 
     @Override
     public void zrus() {
@@ -205,7 +218,7 @@ public class SpravaObec implements Ovladani {
         try {
             instance.odeberAktualni();
         } catch (Exception e) {
-            throw new RuntimeException("Aktualni neni nastaven");
+            throw new RuntimeException("Aktualni is not set");
         }
     }
     
