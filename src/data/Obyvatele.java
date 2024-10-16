@@ -87,110 +87,159 @@ public class Obyvatele implements IObyvatele {
         System.out.println("Add: " + obec + "in position: " + pozice + "for region: " + kraj);
     }
 
-    @Override
-    public Obec zpristupniObec(enumPozice pozice, enumKraj kraj) {
-
-        if (instance.jePrazdny()) {
-            System.err.println("The list is empty, there are no elements to access.");
-            return null;
-        }
-
-        Obec obec = null;
-
-        try {
-            switch (pozice) {
-                case PRVNI:
-                    obec = instance.zpristupniPrvni();
-                    break;
-                case POSLEDNI:
-                    obec = instance.zpristupniPosledni();
-                    break;
-                case NASLEDNIK:
-                    obec = instance.zpristupniNaslednika();
-                    break;
-                case PREDCHUDCE:
-                    obec = instance.zpristupniPredchudce();
-                    break;
-                case AKTUALNI:
-                    obec = instance.zpristupniAktualni();
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown position: " + pozice);
-            }
-        } catch (KolekceException e) {
-            System.err.println("Error accessing community: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return obec;
+   @Override
+public Obec zpristupniObec(enumPozice pozice, enumKraj kraj) {
+    if (instance.jePrazdny()) {
+        System.err.println("List is empty");
+        return null;
     }
 
-    @Override
-    public Obec odeberObec(enumPozice pozice, enumKraj kraj) {
-
-        System.out.println("Size: " + instance.size());
-        if (instance.jePrazdny()) {
-            System.err.println("The list is empty and the item cannot be deleted.");
-            return null;
+    List<Obec> filteredObce = new ArrayList<>();
+    for (Obec obec : instance) {
+        if (obec.getKraj() == kraj) {
+            filteredObce.add(obec);
         }
-        
-            List<Obec> filteredObce = new ArrayList<>();
-            for (Obec obec : instance) {
-                if (obec.getKraj() == kraj) {
-                    filteredObce.add(obec);
-                }
-            }
+    }
 
-            if (filteredObce.isEmpty()) {
-                System.err.println("No items found for the selected region.");
-                return null;
-            }
-        
-        Obec odebranaObec = null;
+    if (filteredObce.isEmpty()) {
+        System.err.println("No elements for this region: " + kraj);
+        return null;
+    }
 
-        try {
-            switch (pozice) {
-                case PRVNI:
-                odebranaObec = filteredObce.get(0);
-                instance.odeberPrvni(); 
+    Obec obec = null;
+    try {
+        
+        switch (pozice) {
+            case PRVNI:
+                obec = filteredObce.get(0);  
                 break;
 
             case POSLEDNI:
-                odebranaObec = filteredObce.get(filteredObce.size() - 1);
-                instance.odeberPosledni(); 
+                obec = filteredObce.get(filteredObce.size() - 1); 
                 break;
 
             case NASLEDNIK:
-                if (filteredObce.size() > 1) {
-                    odebranaObec = filteredObce.get(1); 
-                    instance.odeberNaslednika(); 
+                int currentIndex = filteredObce.indexOf(instance.zpristupniAktualni());
+                if (currentIndex != -1) {
+                    obec = filteredObce.get((currentIndex + 1) % filteredObce.size());
                 } else {
-                    System.err.println("There is no next item to delete.");
+                    System.err.println("naslednik is not selected");
                 }
                 break;
 
             case PREDCHUDCE:
-                if (filteredObce.size() > 1) {
-                    odebranaObec = filteredObce.get(filteredObce.size() - 2); 
-                    instance.odeberPredchudce(); 
+                currentIndex = filteredObce.indexOf(instance.zpristupniAktualni());
+                if (currentIndex != -1) {
+                    obec = filteredObce.get((currentIndex - 1 + filteredObce.size()) % filteredObce.size());
                 } else {
-                    System.err.println("There is no previous item to delete.");
+                    System.err.println("predchudce is not selected");
                 }
                 break;
 
             case AKTUALNI:
-                odebranaObec = filteredObce.get(0); 
-                instance.odeberAktualni(); 
+                obec = instance.zpristupniAktualni(); 
+                if (!filteredObce.contains(obec)) {
+                    System.err.println("aktualni is not for this region");
+                    return null;
+                }
                 break;
 
-                default:
-                    throw new IllegalArgumentException("Unknown position: " + pozice);
-            }
-        } catch (KolekceException e) {
-            System.err.println("Error deleting community: " + e.getMessage());
-            e.printStackTrace();
+            default:
+                throw new IllegalArgumentException("Unknown position " + pozice);
         }
-        return odebranaObec;
+    } catch (KolekceException e) {
+        System.err.println("Error " + e.getMessage());
+        e.printStackTrace();
     }
+
+    return obec;
+}
+
+
+@Override
+public Obec odeberObec(enumPozice pozice, enumKraj kraj) {
+    if (instance.jePrazdny()) {
+        System.err.println("List is empty");
+        return null;
+    }
+
+    List<Obec> filteredObce = new ArrayList<>();
+    List<Integer> indicesInMainList = new ArrayList<>();
+    int index = 0;
+
+    for (Obec obec : instance) {
+        if (obec.getKraj() == kraj) {
+            filteredObce.add(obec);
+            indicesInMainList.add(index);
+        }
+        index++;
+    }
+
+    if (filteredObce.isEmpty()) {
+        System.err.println("No elemnts to show");
+        return null;
+    }
+
+    Obec odebranaObec = null;
+
+    try {
+        switch (pozice) {
+            case PRVNI:
+                odebranaObec = filteredObce.get(0);
+                break;
+
+            case POSLEDNI:
+                odebranaObec = filteredObce.get(filteredObce.size() - 1);
+                break;
+
+            case NASLEDNIK:
+                int currentIndex = filteredObce.indexOf(instance.zpristupniAktualni());
+                if (filteredObce.size() > 1) {
+                    odebranaObec = filteredObce.get((currentIndex + 1) % filteredObce.size());
+                } else {
+                    System.err.println("No naslednik for delete");
+                    return null;
+                }
+                break;
+
+            case PREDCHUDCE:
+                currentIndex = filteredObce.indexOf(instance.zpristupniAktualni());
+                if (currentIndex != -1) {
+                    odebranaObec = filteredObce.get((currentIndex - 1 + filteredObce.size()) % filteredObce.size());
+                } else {
+                    System.err.println("No predchudce for delete");
+                    return null;
+                }
+                break;
+
+            case AKTUALNI:
+                odebranaObec = instance.zpristupniAktualni();
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unknown position: " + pozice);
+        }
+
+
+        if (odebranaObec != null) {
+            int mainListIndexToRemove = indicesInMainList.get(filteredObce.indexOf(odebranaObec));
+            instance.zpristupniPrvni();
+            for (int i = 0; i < mainListIndexToRemove; i++) {
+                instance.zpristupniNaslednika();
+            }
+            instance.odeberAktualni();
+        }
+
+    } catch (KolekceException e) {
+        System.err.println("Error deleting obec: " + e.getMessage());
+        e.printStackTrace();
+    }
+
+    return odebranaObec;
+}
+
+
+
 
     @Override
     public float zjistiPrumer(enumKraj kraj) {
@@ -293,31 +342,30 @@ public class Obyvatele implements IObyvatele {
         if (instance.jePrazdny()) {
             System.out.println("List is empty for: " + kraj);
         }
-        
-         try {
-        List<Obec> newObceList = new ArrayList<>();
-        int count = 0;
-        
-        for (Obec obec : instance) {
-            if (kraj == null || obec.getKraj() == kraj) {
-                count++;
-            } else {
-                newObceList.add(obec);  
+
+        try {
+            List<Obec> newObceList = new ArrayList<>();
+            int count = 0;
+
+            for (Obec obec : instance) {
+                if (kraj == null || obec.getKraj() == kraj) {
+                    count++;
+                } else {
+                    newObceList.add(obec);
+                }
             }
+
+            instance.zrus();
+            for (Obec obec : newObceList) {
+                instance.vlozPosledni(obec);
+            }
+
+            System.out.println("Deleted communitys for region: " + kraj + ": " + count);
+
+        } catch (Exception e) {
+            System.err.println("Error because of deleting: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        instance.zrus();  
-        for (Obec obec : newObceList) {
-    instance.vlozPosledni(obec);  
-} 
-        
-
-
-        System.out.println("Deleted communitys for region: " + kraj + ": " + count);
-        
-    } catch (Exception e) {
-        System.err.println("Error because of deleting: " + e.getMessage());
-        e.printStackTrace();
-    }}
+    }
 
 }

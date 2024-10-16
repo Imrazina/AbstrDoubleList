@@ -4,23 +4,25 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class AbstrDoubleList<T> implements IAbstrDoubleList<T> {
+
     public int size;
     private Prvek prvni;
     private Prvek aktualni;
     private Prvek posledni;
-    
+
     public AbstrDoubleList() {
         this.size = 0;
         this.prvni = null;
         this.aktualni = null;
         this.posledni = null;
     }
-    
+
     private class Prvek<T> {
+
         public T data;
         public Prvek<T> next;
         public Prvek<T> prev;
-        
+
         public Prvek(T data, Prvek<T> next, Prvek<T> prev) {
             this.data = data;
             this.next = next;
@@ -84,7 +86,7 @@ public class AbstrDoubleList<T> implements IAbstrDoubleList<T> {
             aktualni.next.prev = newPrvek;
             aktualni.next = newPrvek;
             if (aktualni == posledni) {
-                posledni = newPrvek;
+                prvni = newPrvek;
             }
             size++;
         }
@@ -102,55 +104,56 @@ public class AbstrDoubleList<T> implements IAbstrDoubleList<T> {
             aktualni.prev.next = newPrvek;
             aktualni.prev = newPrvek;
             if (aktualni == prvni) {
-                prvni = newPrvek;
+                posledni = newPrvek;
             }
             size++;
         }
     }
 
-    @Override
-    public T zpristupniAktualni() throws KolekceException {
-        if (aktualni == null) {
-            throw new KolekceException("No current elements to access");
-        }
-        return (T) aktualni.data;
+   @Override
+public T zpristupniAktualni() throws KolekceException {
+    if (aktualni == null) {
+        throw new KolekceException("Нет текущих элементов для доступа");
     }
+    return (T) aktualni.data;
+}
 
-    @Override
-    public T zpristupniPrvni() throws KolekceException {
-        if (prvni == null) {
-            throw new KolekceException("No elements to access");
-        }
-        aktualni = prvni;
-        return (T) prvni.data;
+@Override
+public T zpristupniPrvni() throws KolekceException {
+    if (prvni == null) {
+        throw new KolekceException("Нет элементов для доступа");
     }
+    aktualni = prvni;
+    return (T) prvni.data;
+}
 
-    @Override
-    public T zpristupniPosledni() throws KolekceException {
-        if (posledni == null) {
-            throw new KolekceException("No elements to access");
-        }
-        aktualni = posledni;
-        return (T) posledni.data;
+@Override
+public T zpristupniPosledni() throws KolekceException {
+    if (posledni == null) {
+        throw new KolekceException("Нет элементов для доступа");
     }
+    aktualni = posledni;
+    return (T) posledni.data;
+}
 
-    @Override
-    public T zpristupniNaslednika() throws KolekceException {
-        if (aktualni == null || aktualni.next == null) {
-            throw new KolekceException("No successors to access");
-        }
-        aktualni = aktualni.next;
-        return (T) aktualni.data;
+@Override
+public T zpristupniNaslednika() throws KolekceException {
+    if (aktualni == null) {
+        throw new KolekceException("Нет текущего элемента для доступа");
     }
+    aktualni = (aktualni.next != null) ? aktualni.next : prvni; // Переход к первому, если это последний элемент
+    return (T) aktualni.data;
+}
 
-    @Override
-    public T zpristupniPredchudce() throws KolekceException {
-        if (aktualni == null || aktualni.prev == null) {
-            throw new KolekceException("No predecessors to access");
-        }
-        aktualni = aktualni.prev;
-        return (T) aktualni.data;
+@Override
+public T zpristupniPredchudce() throws KolekceException {
+    if (aktualni == null) {
+        throw new KolekceException("Нет текущего элемента для доступа");
     }
+    aktualni = (aktualni.prev != null) ? aktualni.prev : posledni; // Переход к последнему, если это первый элемент
+    return (T) aktualni.data;
+}
+
 
     @Override
     public T odeberAktualni() throws KolekceException {
@@ -182,7 +185,7 @@ public class AbstrDoubleList<T> implements IAbstrDoubleList<T> {
         }
 
         T data = (T) prvni.data;
-        if (prvni == posledni) { 
+        if (prvni == posledni) {
             zrus();
         } else {
             prvni = prvni.next;
@@ -236,7 +239,7 @@ public class AbstrDoubleList<T> implements IAbstrDoubleList<T> {
     @Override
     public T odeberPredchudce() throws KolekceException {
         if (jePrazdny()) {
-            throw new KolekceException("List is empty cannot remove the element");
+            throw new KolekceException("List is empty, cannot remove the element");
         }
         if (aktualni.prev == posledni) {
             throw new KolekceException("No predecessors to remove");
@@ -246,8 +249,12 @@ public class AbstrDoubleList<T> implements IAbstrDoubleList<T> {
         }
 
         T data = (T) aktualni.prev.data;
+
         aktualni.prev = aktualni.prev.prev;
-        aktualni.prev.next = aktualni;
+        if (aktualni.prev != null) {
+            aktualni.prev.next = aktualni;
+        }
+
         size--;
 
         return data;

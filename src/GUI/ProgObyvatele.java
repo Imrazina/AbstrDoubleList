@@ -335,7 +335,7 @@ public class ProgObyvatele extends Application {
         Button zpristupniObecBtn = new Button("Zpristupni Obec");
         zpristupniObecBtn.setOnAction(e -> {
             Dialog<enumPozice> dialog = new Dialog<>();
-            dialog.setTitle("Odeber Obec");
+            dialog.setTitle("Zpristupni Obec");
 
             ComboBox<enumPozice> poziceComboBox = new ComboBox<>();
             poziceComboBox.getItems().addAll(enumPozice.values());

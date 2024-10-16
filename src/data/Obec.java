@@ -56,13 +56,11 @@ public class Obec implements Comparable<Obec>{
     
     @Override
     public String toString() {
-        return "Obec{" + 
-               "nazev='" + nazev + '\'' + 
-               ", psc=" + psc + 
-               ", pocetZen=" + pocetZen + 
-               ", pocetMuzu=" + pocetMuzu + 
-               ", celkem=" + celkem + 
-               '}';
+        return
+                (kraj.ordinal() + 1) + ";" + 
+               kraj + ";" + psc + ";" + nazev + ";"
+                + pocetMuzu + ";" + pocetZen + ";"
+               + celkem;
     }
 
     @Override

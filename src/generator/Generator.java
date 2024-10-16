@@ -36,9 +36,9 @@ public class Generator {
             int pocetZen = random.nextInt(1000); 
             
             enumKraj kraj = enumKraj.values()[random.nextInt(enumKraj.values().length)];
-            enumPozice pozice = (i == 0) ? enumPozice.PRVNI : enumPozice.POSLEDNI;
+//            enumPozice pozice = (i == 0) ? enumPozice.PRVNI : enumPozice.POSLEDNI;
             
-            Obec novyObec = new Obec(nazev, psc, pocetMuzu, pocetZen, kraj, pozice);
-            obyvatelstvo.vlozObec(novyObec, pozice, kraj);      
+            Obec novyObec = new Obec(nazev, psc, pocetMuzu, pocetZen, kraj, enumPozice.POSLEDNI);
+            obyvatelstvo.vlozObec(novyObec, enumPozice.POSLEDNI, kraj);      
         }
     }}
